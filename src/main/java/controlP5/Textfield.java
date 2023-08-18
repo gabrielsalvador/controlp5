@@ -24,11 +24,7 @@ package controlP5;
  * @version ##version##
  */
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import controlP5.events.ReleasedOutsideListener;
 import processing.core.PApplet;
@@ -59,7 +55,8 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
     protected int _myTextBufferOverflow = 0;
     protected int _myTextBufferIndexPosition = 0;
     public static int cursorWidth = 1;
-    protected Map<Integer, TextfieldCommand> keyMapping;
+    protected Map<Integer, List<TextfieldCommand>> keyMapping ;
+
     protected InputFilter _myInputFilter = InputFilter.BITFONT;
     protected List<Integer> ignorelist;
     protected int TEXTALIGN = 0;
@@ -131,15 +128,16 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
 
         setSize(getWidth(), getHeight());
 
-        keyMapping = new HashMap<Integer, TextfieldCommand>();
-        keyMapping.put(ENTER, new Enter());
-        keyMapping.put(DEFAULT, new InsertCharacter());
-        keyMapping.put(DELETE, new DeleteCharacter());
-        keyMapping.put(BACKSPACE, new DeleteCharacter());
-        keyMapping.put(LEFT, new MoveLeft());
-        keyMapping.put(RIGHT, new MoveRight());
-        keyMapping.put(UP, new MoveUp());
-        keyMapping.put(DOWN, new MoveDown());
+        keyMapping = new HashMap<Integer, List<TextfieldCommand>>();
+        addCommand(ENTER, new Enter());
+
+        addCommand(DEFAULT, new InsertCharacter());
+        addCommand(DELETE, new DeleteCharacter());
+        addCommand(BACKSPACE, new DeleteCharacter());
+        addCommand(LEFT, new MoveLeft());
+        addCommand(RIGHT, new MoveRight());
+        addCommand(UP, new MoveUp());
+        addCommand(DOWN, new MoveDown());
 
         ignorelist = new LinkedList<Integer>();
         ignorelist.add(SHIFT);
@@ -294,7 +292,7 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
     }
 
     //get keymappings
-    public Map<Integer, TextfieldCommand> getKeyMapping() {
+    public Map<Integer, List<TextfieldCommand>> getKeyMappings() {
         return keyMapping;
     }
 
@@ -411,8 +409,9 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
         return newlabel;
     }
 
+    @Override
     public void keyEvent(KeyEvent theKeyEvent) {
-        if(shouldSkipNextEvent){
+        if (shouldSkipNextEvent) {
             shouldSkipNextEvent = false;
             return;
         }
@@ -420,21 +419,22 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
             if (ignorelist.contains(cp5.getKeyCode())) {
                 return;
             }
-            if (keyMapping.containsKey(cp5.getKeyCode())) {
-                keyMapping.get(cp5.getKeyCode()).execute();
+            int keyCode = cp5.getKeyCode();
+            if (keyMapping.containsKey(keyCode)) {
+                for (TextfieldCommand command : keyMapping.get(keyCode)) {
+                    command.execute();
+                }
             } else {
-                keyMapping.get(DEFAULT).execute();
+                keyMapping.get(DEFAULT).get(0).execute();
             }
         }
     }
 
+
     /**
      * make the controller execute a return event. submit the current content of the texfield.
      */
-    public Textfield submit() {
-        keyMapping.get(ENTER).execute();
-        return this;
-    }
+
 
     public String[] getTextList() {
         String[] s = new String[_myHistory.size()];
@@ -447,6 +447,13 @@ public class Textfield extends Controller<Textfield> implements ReleasedOutsideL
         return this;
     }
 
+
+    public void addCommand(int keyCode, TextfieldCommand command) {
+        if (!keyMapping.containsKey(keyCode)) {
+            keyMapping.put(keyCode, new ArrayList<>());
+        }
+        keyMapping.get(keyCode).add(command);
+    }
 
     class InsertCharacter implements TextfieldCommand {
 
