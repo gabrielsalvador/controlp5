@@ -27,6 +27,7 @@ package controlP5;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 
 import processing.core.PApplet;
 import processing.core.PFont;
@@ -414,10 +415,13 @@ public abstract class ControllerGroup< T > implements ControllerInterface< T > ,
 					cc.draw( theGraphics );
 				}
 			}
-			for ( ControllerInterface< ? > ci : controllers.get( ) ) {
-				if ( ci.isVisible( ) ) {
-					ci.updateInternalEvents( theApplet );
-					ci.draw( theGraphics );
+
+			Iterator<ControllerInterface<?>> iterator = controllers.get().iterator();
+			while (iterator.hasNext()) {
+				ControllerInterface<?> ci = iterator.next();
+				if (ci.isVisible()) {
+					ci.updateInternalEvents(theApplet);
+					ci.draw(theGraphics);
 				}
 			}
 
